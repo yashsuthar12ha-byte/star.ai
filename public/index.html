@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Star.AI — Ask the Universe</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+<!-- ✅ GOOGLE ANALYTICS — Replace G-XXXXXXXXXX with your Measurement ID -->
+<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script> -->
+
+<!-- ✅ GOOGLE ADSENSE — Replace ca-pub-XXXXXXXXXXXXXXXX with your Publisher ID -->
+<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;cursor:none;}
+
+:root{
+  --deep:#00000f;
+  --surface:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.08);
+  --glow:#4fc3f7;
+  --gold:#ffd54f;
+  --text:#e8eaf6;
+  --muted:rgba(255,255,255,0.35);
+  --accent:#80deea;
+}
+
+body{
+  background:var(--deep);
+  font-family:'Exo 2',sans-serif;
+  color:var(--text);
+}
+
+/* ── STARS CANVAS ── */
+#cosmos{position:fixed;inset:0;z-index:0;}
+
+/* ── SOLAR SYSTEM ── */
+#solar{position:fixed;inset:0;z-index:1;pointer-events:none;}
+
+/* ── CUSTOM CURSOR ── */
+#cursor{
+  position:fixed;width:8px;height:8px;
+  background:#fff;border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 12px 4px rgba(255,255,255,0.6);
+  transition:transform 0.1s;
+}
+
+/* ── LAYOUT ── */
+#app{
+  position:fixed;inset:0;z-index:10;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:24px;
+}
+
+/* ── LOGO ── */
+.logo{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(2rem,5vw,3.2rem);
+  font-weight:900;
+  letter-spacing:6px;
+  text-align:center;
+  margin-bottom:8px;
+  animation:fadeIn 1s ease both;
+  position:relative;
+}
+.logo .star{color:var(--glow);text-shadow:0 0 30px var(--glow),0 0 60px rgba(79,195,247,0.4);}
+.logo .ai{color:rgba(255,255,255,0.9);}
+
+.subtitle{
+  font-size:0.72rem;
+  letter-spacing:4px;
+  color:var(--muted);
+  text-align:center;
+  margin-bottom:48px;
+  text-transform:uppercase;
+  animation:fadeIn 1s 0.2s ease both;
+}
+
+/* ── INPUT AREA ── */
+.input-wrap{
+  width:100%;max-width:600px;
+  animation:fadeIn 1s 0.4s ease both;
+  position:relative;
+}
+
+.input-ring{
+  position:relative;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(79,195,247,0.25);
+  border-radius:20px;
+  display:flex;align-items:flex-end;gap:12px;
+  padding:16px 16px 16px 22px;
+  transition:border-color 0.3s,box-shadow 0.3s;
+  backdrop-filter:blur(20px);
+}
+.input-ring:focus-within{
+  border-color:rgba(79,195,247,0.6);
+  box-shadow:0 0 0 1px rgba(79,195,247,0.2),0 0 40px rgba(79,195,247,0.08);
+}
+
+textarea{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'Exo 2',sans-serif;
+  font-size:0.95rem;font-weight:300;
+  resize:none;min-height:28px;max-height:120px;
+  line-height:1.6;letter-spacing:0.3px;
+}
+textarea::placeholder{color:var(--muted);font-style:italic;}
+
+.send-btn{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--glow),#0288d1);
+  border:none;cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  transition:transform 0.2s,box-shadow 0.2s,opacity 0.2s;
+  box-shadow:0 0 20px rgba(79,195,247,0.3);
+}
+.send-btn:hover{transform:scale(1.08);box-shadow:0 0 30px rgba(79,195,247,0.5);}
+.send-btn:disabled{opacity:0.4;}
+.send-btn svg{width:18px;height:18px;fill:#fff;}
+
+/* ── QUICK TAGS ── */
+.tags{
+  display:flex;flex-wrap:wrap;gap:8px;
+  justify-content:center;margin-top:18px;
+  animation:fadeIn 1s 0.6s ease both;
+}
+.tag{
+  font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;
+  padding:5px 14px;border-radius:100px;
+  border:1px solid var(--border);
+  color:var(--muted);cursor:none;
+  transition:all 0.25s;background:transparent;
+}
+.tag:hover{border-color:rgba(79,195,247,0.4);color:var(--glow);}
+
+/* ── ANSWER PANEL ── */
+#answerPanel{
+  width:100%;max-width:600px;
+  margin-top:20px;
+  display:none;
+  animation:riseUp 0.5s ease both;
+}
+.answer-box{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(79,195,247,0.2);
+  border-radius:20px;
+  padding:22px 26px;
+  backdrop-filter:blur(20px);
+  position:relative;overflow:hidden;
+  max-height:200px;overflow-y:auto;
+}
+.answer-box::-webkit-scrollbar{width:3px;}
+.answer-box::-webkit-scrollbar-thumb{background:rgba(79,195,247,0.3);border-radius:10px;}
+.answer-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--glow),transparent);
+}
+.ans-label{
+  font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--glow);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.pulse-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--glow);
+  animation:pulse 1.5s infinite;
+  box-shadow:0 0 8px var(--glow);
+}
+#answerText{
+  font-size:0.9rem;font-weight:300;line-height:1.8;
+  color:rgba(255,255,255,0.85);white-space:pre-wrap;word-break:break-word;
+}
+.typing-cursor::after{content:'▋';animation:blink 0.7s infinite;color:var(--glow);}
+
+/* ── CORNER MENU ── */
+#menuBtn{
+  position:fixed;top:24px;right:24px;z-index:100;
+  width:44px;height:44px;border-radius:12px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  cursor:none;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;
+  backdrop-filter:blur(20px);
+  transition:background 0.2s,border-color 0.2s;
+}
+#menuBtn:hover{background:rgba(79,195,247,0.1);border-color:rgba(79,195,247,0.3);}
+.bar{width:18px;height:1.5px;background:var(--muted);border-radius:2px;transition:background 0.2s;}
+#menuBtn:hover .bar{background:var(--glow);}
+
+/* ── HISTORY DRAWER ── */
+#drawer{
+  position:fixed;top:0;right:-320px;bottom:0;
+  width:300px;z-index:200;
+  background:rgba(5,5,20,0.95);
+  border-left:1px solid var(--border);
+  backdrop-filter:blur(40px);
+  padding:28px 20px;
+  transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;gap:0;
+}
+#drawer.open{right:0;}
+
+.drawer-header{
+  font-family:'Orbitron',monospace;
+  font-size:0.75rem;letter-spacing:3px;
+  color:var(--glow);text-transform:uppercase;
+  margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.close-btn{
+  width:28px;height:28px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:none;
+  font-size:1rem;display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+}
+.close-btn:hover{background:rgba(79,195,247,0.1);color:var(--glow);}
+
+#historyList{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+#historyList::-webkit-scrollbar{width:2px;}
+#historyList::-webkit-scrollbar-thumb{background:rgba(79,195,247,0.2);}
+
+.hist-item{
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;cursor:none;transition:all 0.2s;
+}
+.hist-item:hover{border-color:rgba(79,195,247,0.3);background:rgba(79,195,247,0.05);}
+.hist-q{font-size:0.78rem;color:var(--muted);line-height:1.4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-time{font-size:0.62rem;color:rgba(255,255,255,0.2);margin-top:4px;}
+
+.empty-hist{color:var(--muted);font-size:0.8rem;text-align:center;margin-top:40px;opacity:0.5;}
+
+/* ── OVERLAY ── */
+#overlay{
+  position:fixed;inset:0;z-index:150;
+  background:rgba(0,0,5,0.5);backdrop-filter:blur(4px);
+  display:none;cursor:none;
+}
+#overlay.show{display:block;}
+
+/* ── CREATOR CREDIT ── */
+#credit{
+  position:fixed;bottom:20px;left:24px;z-index:100;
+  display:flex;align-items:center;gap:8px;
+  font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(255,255,255,0.18);
+  pointer-events:all;
+  transition:color 0.3s;
+}
+#credit:hover{color:rgba(79,195,247,0.6);}
+#credit a{
+  color:inherit;text-decoration:none;
+  font-family:'Orbitron',monospace;font-size:0.6rem;
+}
+#credit .dot{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--glow);opacity:0.4;
+}
+.loading-ring{
+  display:inline-flex;gap:5px;align-items:center;
+}
+.loading-ring span{
+  width:5px;height:5px;border-radius:50%;background:var(--glow);
+  animation:dotBounce 1.2s infinite;
+}
+.loading-ring span:nth-child(2){animation-delay:0.2s;}
+.loading-ring span:nth-child(3){animation-delay:0.4s;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes riseUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.7);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+@keyframes dotBounce{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-8px);}}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<!-- STARS -->
+<canvas id="cosmos"></canvas>
+
+<!-- SOLAR SYSTEM -->
+<canvas id="solar"></canvas>
+
+<!-- CORNER MENU -->
+<button id="menuBtn" onclick="toggleDrawer()">
+  <div class="bar"></div>
+  <div class="bar"></div>
+  <div class="bar"></div>
+</button>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeDrawer()"></div>
+
+<!-- HISTORY DRAWER -->
+<div id="drawer">
+  <div class="drawer-header">
+    <span>⭐ History</span>
+    <button class="close-btn" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="historyList">
+    <div class="empty-hist">Koi sawaal nahi abhi tak...<br>Kuch poochho! 🚀</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <div class="logo">
+    <span class="star">STAR</span><span class="ai">.AI</span>
+  </div>
+  <div class="subtitle">Ask Anything · The Universe Will Answer</div>
+
+  <!-- INPUT -->
+  <div class="input-wrap">
+    <div class="input-ring">
+      <textarea id="qInput" rows="1" placeholder="Type your question... the universe is listening 🌌"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="ask()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="tags">
+      <button class="tag" onclick="fillQ('What is the meaning of life?')">🌟 Life</button>
+      <button class="tag" onclick="fillQ('How do I switch careers successfully?')">💼 Career</button>
+      <button class="tag" onclick="fillQ('How to stay healthy every day?')">🧬 Health</button>
+      <button class="tag" onclick="fillQ('How should I invest my money?')">💰 Finance</button>
+      <button class="tag" onclick="fillQ('How to learn Python from scratch?')">💻 Tech</button>
+    </div>
+  </div>
+
+  <!-- ANSWER -->
+  <div id="answerPanel">
+    <div class="answer-box">
+      <div class="ans-label"><div class="pulse-dot"></div>Star.AI · Response</div>
+      <div id="answerText"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CREATOR CREDIT -->
+<div id="credit">
+  <div class="dot"></div>
+  <span>Built by</span>
+  <a href="mailto:yashsuthar12ha@gmail.com">Yash Suthar</a>
+  <div class="dot"></div>
+</div>
+
+<script>
+// ── CUSTOM CURSOR ──
+const cursor = document.getElementById('cursor');
+let mx = window.innerWidth/2, my = window.innerHeight/2;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+
+// ── STARS CANVAS ──
+const cosmos = document.getElementById('cosmos');
+const ctx = cosmos.getContext('2d');
+let stars = [];
+
+function resizeCanvas(){
+  cosmos.width = window.innerWidth;
+  cosmos.height = window.innerHeight;
+  solar.width = window.innerWidth;
+  solar.height = window.innerHeight;
+  initStars();
+}
+
+function initStars(){
+  stars = [];
+  const count = Math.floor((cosmos.width * cosmos.height) / 3000);
+  for(let i=0;i<count;i++){
+    stars.push({
+      x: Math.random()*cosmos.width,
+      y: Math.random()*cosmos.height,
+      r: Math.random()*1.4+0.2,
+      a: Math.random(),
+      speed: Math.random()*0.005+0.002,
+      twinkle: Math.random()*Math.PI*2
+    });
+  }
+}
+
+function drawStars(t){
+  ctx.clearRect(0,0,cosmos.width,cosmos.height);
+  stars.forEach(s=>{
+    s.twinkle += s.speed;
+    const alpha = 0.3 + 0.7 * Math.abs(Math.sin(s.twinkle));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,${alpha * s.a})`;
+    ctx.fill();
+  });
+}
+
+// ── SOLAR SYSTEM ──
+const solar = document.getElementById('solar');
+const sctx = solar.getContext('2d');
+
+let sunX = window.innerWidth/2, sunY = window.innerHeight/2;
+let targetX = sunX, targetY = sunY;
+
+// Smooth follow
+let followX = sunX, followY = sunY;
+
+const planets = [
+  { r:28, size:4, color:'#90caf9', speed:0.8,  angle:0,   glow:'rgba(144,202,249,0.5)' },
+  { r:50, size:5.5,color:'#a5d6a7',speed:0.5,  angle:1.2, glow:'rgba(165,214,167,0.4)' },
+  { r:75, size:7,  color:'#ef9a9a',speed:0.35, angle:2.5, glow:'rgba(239,154,154,0.4)' },
+  { r:105,size:5,  color:'#ffcc80',speed:0.22, angle:0.8, glow:'rgba(255,204,128,0.4)' },
+  { r:138,size:9,  color:'#ffe082',speed:0.14, angle:3.5, glow:'rgba(255,224,130,0.3)', ring:true },
+  { r:172,size:7,  color:'#80deea',speed:0.09, angle:1.0, glow:'rgba(128,222,234,0.3)' },
+];
+
+let lastTime = 0;
+
+function drawSolar(t){
+  sctx.clearRect(0,0,solar.width,solar.height);
+
+  // Smooth lerp toward mouse
+  followX += (mx - followX) * 0.06;
+  followY += (my - followY) * 0.06;
+
+  const cx = followX, cy = followY;
+  const dt = (t - lastTime) / 1000;
+  lastTime = t;
+
+  // Orbit rings
+  planets.forEach(p=>{
+    sctx.beginPath();
+    sctx.arc(cx,cy,p.r,0,Math.PI*2);
+    sctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    sctx.lineWidth = 1;
+    sctx.stroke();
+  });
+
+  // Sun
+  const sunGrad = sctx.createRadialGradient(cx,cy,0,cx,cy,18);
+  sunGrad.addColorStop(0,'#fff9c4');
+  sunGrad.addColorStop(0.4,'#ffd54f');
+  sunGrad.addColorStop(1,'rgba(255,213,79,0)');
+  sctx.beginPath();
+  sctx.arc(cx,cy,10,0,Math.PI*2);
+  sctx.fillStyle = '#fff9c4';
+  sctx.fill();
+  // Sun glow
+  sctx.beginPath();
+  sctx.arc(cx,cy,18,0,Math.PI*2);
+  sctx.fillStyle = sunGrad;
+  sctx.fill();
+
+  // Planets
+  planets.forEach(p=>{
+    p.angle += p.speed * dt * 0.6;
+    const px = cx + Math.cos(p.angle) * p.r;
+    const py = cy + Math.sin(p.angle) * p.r;
+
+    // Planet glow
+    const grad = sctx.createRadialGradient(px,py,0,px,py,p.size*3);
+    grad.addColorStop(0, p.glow);
+    grad.addColorStop(1,'transparent');
+    sctx.beginPath();
+    sctx.arc(px,py,p.size*3,0,Math.PI*2);
+    sctx.fillStyle=grad;
+    sctx.fill();
+
+    // Planet body
+    sctx.beginPath();
+    sctx.arc(px,py,p.size,0,Math.PI*2);
+    sctx.fillStyle=p.color;
+    sctx.fill();
+
+    // Saturn ring
+    if(p.ring){
+      sctx.save();
+      sctx.translate(px,py);
+      sctx.scale(1,0.3);
+      sctx.beginPath();
+      sctx.arc(0,0,p.size+6,0,Math.PI*2);
+      sctx.strokeStyle='rgba(255,224,130,0.45)';
+      sctx.lineWidth=3;
+      sctx.stroke();
+      sctx.restore();
+    }
+  });
+}
+
+function loop(t){
+  drawStars(t);
+  drawSolar(t);
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+requestAnimationFrame(loop);
+
+// ── TEXTAREA AUTO RESIZE ──
+function autoResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+}
+
+// ── HISTORY ──
+let history = [];
+
+function saveHistory(q, a){
+  history.unshift({q, a, time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})});
+  renderHistory();
+}
+
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  if(history.length===0){
+    list.innerHTML='<div class="empty-hist">No history yet.<br>Ask your first question! 🌌</div>';
+    return;
+  }
+  list.innerHTML = history.map((h,i)=>`
+    <div class="hist-item" onclick="showHistAnswer(${i})">
+      <div class="hist-q">🔍 ${h.q}</div>
+      <div class="hist-time">${h.time}</div>
+    </div>
+  `).join('');
+}
+
+function showHistAnswer(i){
+  const h = history[i];
+  document.getElementById('qInput').value = h.q;
+  showAnswer(h.a);
+  closeDrawer();
+}
+
+// ── DRAWER ──
+function toggleDrawer(){
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ── FILL QUESTION ──
+function fillQ(q){
+  const ta = document.getElementById('qInput');
+  ta.value = q;
+  autoResize(ta);
+  ta.focus();
+}
+
+function handleKey(e){
+  if(e.key==='Enter' && !e.shiftKey){e.preventDefault();ask();}
+}
+
+// ── SHOW ANSWER ──
+function showAnswer(text){
+  const panel = document.getElementById('answerPanel');
+  const el = document.getElementById('answerText');
+  panel.style.display='block';
+  el.className='typing-cursor';
+  el.textContent='';
+  let i=0;
+  function type(){
+    if(i<text.length){
+      el.textContent+=text[i++];
+      setTimeout(type,10);
+    } else {
+      el.className='';
+    }
+  }
+  type();
+}
+
+// ── ASK AI ──
+async function ask(){
+  const q = document.getElementById('qInput').value.trim();
+  if(!q) return;
+
+  const btn = document.getElementById('sendBtn');
+  const el = document.getElementById('answerText');
+  const panel = document.getElementById('answerPanel');
+
+  btn.disabled=true;
+  panel.style.display='block';
+  el.className='';
+  el.innerHTML='<span class="loading-ring"><span></span><span></span><span></span></span>';
+
+  try{
+    const res = await fetch("/.netlify/functions/ask",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({question: q})
+    });
+    const data = await res.json();
+    const answer = data.answer || "Something went wrong. Please try again! 🛸";
+    showAnswer(answer);
+    saveHistory(q, answer);
+  } catch(e){
+    el.textContent='⚠️ Connection issue. Please try again shortly!';
+  }
+
+  btn.disabled=false;
+}
+</script>
+</body>
+</html>
